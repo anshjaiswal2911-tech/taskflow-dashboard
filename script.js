@@ -232,7 +232,13 @@ function loadTasks() {
   try {
     const rawData = localStorage.getItem(STORAGE_KEYS.TASKS);
     if (rawData) {
-      state.tasks = JSON.parse(rawData);
+      const parsed = JSON.parse(rawData);
+      if (Array.isArray(parsed)) {
+        state.tasks = parsed;
+      } else {
+        state.tasks = [...DEFAULT_TASKS];
+        saveTasksToStorage();
+      }
     } else {
       // First visit: Seed default demo data
       state.tasks = [...DEFAULT_TASKS];
@@ -260,9 +266,9 @@ function createTask(taskData) {
   const newTask = {
     id: 'task-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7),
     title: taskData.title.trim(),
-    description: taskData.description.trim(),
-    priority: taskData.priority,
-    category: taskData.category,
+    description: taskData.description ? taskData.description.trim() : '',
+    priority: taskData.priority || 'Low',
+    category: taskData.category || 'Work',
     dueDate: taskData.dueDate,
     completed: false,
     createdAt: new Date().toISOString()
@@ -281,9 +287,9 @@ function updateTask(id, updatedData) {
   state.tasks[index] = {
     ...state.tasks[index],
     title: updatedData.title.trim(),
-    description: updatedData.description.trim(),
-    priority: updatedData.priority,
-    category: updatedData.category,
+    description: updatedData.description ? updatedData.description.trim() : '',
+    priority: updatedData.priority || 'Low',
+    category: updatedData.category || 'Work',
     dueDate: updatedData.dueDate
   };
 
@@ -321,6 +327,7 @@ function resetDemoData() {
   state.currentCategory = 'all';
   state.searchQuery = '';
   elements.searchInput.value = '';
+  elements.clearSearchBtn.style.display = 'none';
   elements.categoryFilter.value = 'all';
   saveTasksToStorage();
   updateUI();
@@ -344,34 +351,43 @@ function getFilteredAndSortedTasks() {
 
   // 2. Category Filter
   if (state.currentCategory !== 'all') {
-    list = list.filter(t => t.category.toLowerCase() === state.currentCategory.toLowerCase());
+    list = list.filter(t => t.category && t.category.toLowerCase() === state.currentCategory.toLowerCase());
   }
 
-  // 3. Search Query Filter
-  if (state.searchQuery.trim() !== '') {
+  // 3. Search Query Filter (Safe string handling)
+  if (state.searchQuery && state.searchQuery.trim() !== '') {
     const query = state.searchQuery.toLowerCase().trim();
-    list = list.filter(t => 
-      t.title.toLowerCase().includes(query) ||
-      t.description.toLowerCase().includes(query) ||
-      t.category.toLowerCase().includes(query)
-    );
+    list = list.filter(t => {
+      const title = (t.title || '').toLowerCase();
+      const desc = (t.description || '').toLowerCase();
+      const cat = (t.category || '').toLowerCase();
+      return title.includes(query) || desc.includes(query) || cat.includes(query);
+    });
   }
 
-  // 4. Sorting
+  // 4. Sorting with deterministic tie-breakers and invalid date protection
   list.sort((a, b) => {
+    const timeA = a.dueDate ? new Date(a.dueDate).getTime() : 0;
+    const timeB = b.dueDate ? new Date(b.dueDate).getTime() : 0;
+
     switch (state.sortBy) {
       case 'date-asc':
-        return new Date(a.dueDate) - new Date(b.dueDate);
+        return (timeA || 0) - (timeB || 0);
       case 'date-desc':
-        return new Date(b.dueDate) - new Date(a.dueDate);
+        return (timeB || 0) - (timeA || 0);
       case 'priority-desc': {
         const priorityWeight = { High: 3, Medium: 2, Low: 1 };
-        return priorityWeight[b.priority] - priorityWeight[a.priority];
+        const diff = (priorityWeight[b.priority] || 0) - (priorityWeight[a.priority] || 0);
+        if (diff !== 0) return diff;
+        return (timeA || 0) - (timeB || 0);
       }
-      case 'created-desc':
-        return new Date(b.createdAt) - new Date(a.createdAt);
+      case 'created-desc': {
+        const createdA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const createdB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return createdB - createdA;
+      }
       case 'title-asc':
-        return a.title.localeCompare(b.title);
+        return (a.title || '').localeCompare(b.title || '');
       default:
         return 0;
     }
@@ -452,14 +468,14 @@ function updateNavigationStates() {
     elements.categoryFilter.value = state.currentCategory;
   }
 
-  // Active Filter Summary Banner
-  const hasActiveFilters = state.currentFilter !== 'all' || state.currentCategory !== 'all' || state.searchQuery !== '';
+  // Active Filter Summary Banner (avoid double HTML escaping in textContent)
+  const hasActiveFilters = state.currentFilter !== 'all' || state.currentCategory !== 'all' || (state.searchQuery && state.searchQuery.trim() !== '');
   if (hasActiveFilters) {
     elements.filterInfoBar.style.display = 'flex';
     const parts = [];
     if (state.currentFilter !== 'all') parts.push(`Status: ${capitalize(state.currentFilter)}`);
     if (state.currentCategory !== 'all') parts.push(`Category: ${state.currentCategory}`);
-    if (state.searchQuery !== '') parts.push(`Search: "${escapeHtml(state.searchQuery)}"`);
+    if (state.searchQuery && state.searchQuery.trim() !== '') parts.push(`Search: "${state.searchQuery.trim()}"`);
     elements.filterSummaryText.textContent = parts.join(' • ');
   } else {
     elements.filterInfoBar.style.display = 'none';
@@ -498,8 +514,9 @@ function renderTasks() {
     card.setAttribute('data-id', task.id);
 
     const dateStatus = getDateBadgeInfo(task.dueDate, task.completed);
-    const categoryClass = getCategoryBadgeClass(task.category);
-    const priorityClass = `badge-priority-${task.priority.toLowerCase()}`;
+    const categoryClass = getCategoryBadgeClass(task.category || 'Work');
+    const priority = task.priority || 'Low';
+    const priorityClass = `badge-priority-${priority.toLowerCase()}`;
 
     card.innerHTML = `
       <div class="task-checkbox-wrapper">
@@ -538,12 +555,12 @@ function renderTasks() {
             <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor">
               <circle cx="12" cy="12" r="10"></circle>
             </svg>
-            ${task.priority} Priority
+            ${priority} Priority
           </span>
 
           <!-- Category Badge -->
           <span class="badge-tag ${categoryClass}">
-            ${task.category}
+            ${escapeHtml(task.category || 'Work')}
           </span>
 
           <!-- Due Date Badge -->
@@ -585,9 +602,18 @@ function getDateBadgeInfo(dueDateStr, isCompleted) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const [year, month, day] = dueDateStr.split('-').map(Number);
+  const parts = dueDateStr.split('-').map(Number);
+  if (parts.length !== 3 || parts.some(isNaN)) {
+    return { label: dueDateStr, className: '' };
+  }
+
+  const [year, month, day] = parts;
   const dueDate = new Date(year, month - 1, day);
   dueDate.setHours(0, 0, 0, 0);
+
+  if (isNaN(dueDate.getTime())) {
+    return { label: dueDateStr, className: '' };
+  }
 
   const diffTime = dueDate.getTime() - today.getTime();
   const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
@@ -610,6 +636,7 @@ function getDateBadgeInfo(dueDateStr, isCompleted) {
 }
 
 function getCategoryBadgeClass(category) {
+  if (!category) return 'badge-cat-work';
   switch (category.toLowerCase()) {
     case 'work': return 'badge-cat-work';
     case 'personal': return 'badge-cat-personal';
@@ -670,8 +697,8 @@ function openEditTaskModal(id) {
   elements.taskIdInput.value = task.id;
   elements.taskTitleInput.value = task.title;
   elements.taskDescInput.value = task.description || '';
-  elements.taskCategorySelect.value = task.category;
-  elements.taskDueDateInput.value = task.dueDate;
+  elements.taskCategorySelect.value = task.category || 'Work';
+  elements.taskDueDateInput.value = task.dueDate || getRelativeDate(1);
 
   const priorityRadio = elements.taskForm.querySelector(`input[name="priority"][value="${task.priority}"]`);
   if (priorityRadio) priorityRadio.checked = true;
@@ -814,19 +841,39 @@ function setupEventListeners() {
     updateUI();
   });
 
-  // Global Keyboard Shortcut: '/' to focus search, 'Escape' to close modals/search
+  // Global Keyboard Shortcuts:
+  // '/' to focus search (when not in an input/textarea/select/modal)
+  // 'Escape' to close modals or drawer
   window.addEventListener('keydown', (e) => {
-    if (e.key === '/' && document.activeElement !== elements.searchInput && !elements.taskModal.classList.contains('show')) {
+    const isTypingField = ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName);
+    const isTaskModalOpen = elements.taskModal.classList.contains('show');
+    const isDeleteModalOpen = elements.deleteModal.classList.contains('show');
+
+    if (e.key === '/' && !isTypingField && !isTaskModalOpen && !isDeleteModalOpen) {
       e.preventDefault();
       elements.searchInput.focus();
     } else if (e.key === 'Escape') {
-      if (elements.taskModal.classList.contains('show')) {
+      if (isTaskModalOpen) {
         closeModal(elements.taskModal);
-      } else if (elements.deleteModal.classList.contains('show')) {
+      } else if (isDeleteModalOpen) {
+        state.taskToDeleteId = null;
         closeModal(elements.deleteModal);
       } else if (elements.sidebar.classList.contains('open')) {
         closeSidebar();
       }
+    }
+  });
+
+  // Live input error clearing
+  elements.taskTitleInput.addEventListener('input', () => {
+    if (elements.taskTitleInput.value.trim()) {
+      elements.taskTitleInput.parentElement.classList.remove('has-error');
+    }
+  });
+
+  elements.taskDueDateInput.addEventListener('change', () => {
+    if (elements.taskDueDateInput.value) {
+      elements.taskDueDateInput.parentElement.classList.remove('has-error');
     }
   });
 
@@ -905,7 +952,10 @@ function setupEventListeners() {
   elements.taskForm.addEventListener('submit', handleTaskFormSubmit);
 
   // Delete Modal Confirmation
-  elements.cancelDeleteBtn.addEventListener('click', () => closeModal(elements.deleteModal));
+  elements.cancelDeleteBtn.addEventListener('click', () => {
+    state.taskToDeleteId = null;
+    closeModal(elements.deleteModal);
+  });
   elements.confirmDeleteBtn.addEventListener('click', () => {
     if (state.taskToDeleteId) {
       deleteTask(state.taskToDeleteId);
@@ -914,7 +964,10 @@ function setupEventListeners() {
     closeModal(elements.deleteModal);
   });
   elements.deleteModal.addEventListener('click', (e) => {
-    if (e.target === elements.deleteModal) closeModal(elements.deleteModal);
+    if (e.target === elements.deleteModal) {
+      state.taskToDeleteId = null;
+      closeModal(elements.deleteModal);
+    }
   });
 
   // Reset Demo Data
@@ -938,3 +991,4 @@ function capitalize(str) {
 
 // Launch the app when DOM content is ready
 document.addEventListener('DOMContentLoaded', initApp);
+
