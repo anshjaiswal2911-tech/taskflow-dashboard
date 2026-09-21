@@ -1,119 +1,168 @@
-# 🚀 TaskFlow – Task Management Dashboard
-
-TaskFlow is a modern, high-performance, and responsive task management dashboard crafted with vanilla **HTML5**, **CSS3**, and **JavaScript (ES6+)**. Built without external UI frameworks or heavy dependencies, it demonstrates clean architectural design, state persistence, accessible interface patterns, and fluid micro-interactions.
-
----
-
-## 🌟 Key Features
-
-### 1. Modern SaaS Dashboard Layout
-- **Collapsible Sidebar Navigation:** Quick filtering by status (All, In Progress, Completed, High Priority) and categories (Work, Personal, Development, Design) with live item count badges.
-- **Top Header Bar:** Global real-time search with keyboard shortcut (`/`), active date display, responsive mobile menu drawer, and light/dark theme toggle.
-- **View Switcher:** Seamlessly toggle between **List View** and **Grid View** layout preferences.
-
-### 2. Full Task Management (CRUD)
-- **Add New Task:** Modal dialog with form validation for task title, description, priority (Low, Medium, High), category, and due date.
-- **Edit Task:** Update existing task details in-place with pre-populated form state.
-- **Mark Complete:** Instant checkbox toggle with smooth animations, strikethrough styling, and dynamic status transitions.
-- **Delete Confirmation:** Safe two-step deletion confirmation modal to prevent accidental data loss.
-
-### 3. Dynamic Real-Time Statistics
-- **Total Tasks:** Complete count of recorded tasks.
-- **Pending Tasks:** Active items requiring attention.
-- **Completed Tasks:** Real-time completion count and percentage progress.
-- **High Priority Tasks:** Urgent items flagged for quick visibility.
-- **Productivity Goal Bar:** Dynamic progress bar in the sidebar reflecting live progress.
-
-### 4. Advanced Filtering & Sorting
-- **Status Filter:** View All, Active, Completed, or High Priority items.
-- **Category Filter:** Filter tasks by category tags (*Work*, *Personal*, *Development*, *Design*).
-- **Sort Options:** Sort by Due Date (Earliest / Latest), Priority (High to Low), Recently Created, or Alphabetical (A-Z).
-- **Active Filter Summary Bar:** Visual feedback of active filters with a one-click reset action.
-
-### 5. Instant Real-Time Search
-- Instant live searching across task titles, descriptions, and categories.
-- Accessible keyboard shortcut (`/` to focus search, `Esc` to clear/unfocus).
-
-### 6. Light / Dark Theme Support
-- Clean, contrast-accessible Dark Mode with system preference detection (`prefers-color-scheme`).
-- Theme preference saved to `localStorage` for continuity across sessions.
-
-### 7. LocalStorage Persistence
-- All tasks, theme preferences, and layout view modes are saved in `localStorage`.
-- Includes sensible initial demo tasks on first load and a **"Reset Demo Data"** utility button.
-
-### 8. Micro-Interactions & Accessible Feedback
-- Non-blocking toast notification system for user actions (create, edit, delete, complete).
-- Accessible keyboard navigation (`Esc` closes modals, `Enter` submits forms, `Tab` focus ring management).
-- Empty state screens with contextual actions when no tasks match filters.
+# 🚀 TaskFlow – Modern Task Management Single-Page Application (SPA)
+**YR NOVATECH Internship • Task 5: Advanced Frontend & API Integration**  
+**Student:** Ansh Jaiswal  
+**Repository:** [github.com/anshjaiswal2911-tech/taskflow-dashboard](https://github.com/anshjaiswal2911-tech/taskflow-dashboard)  
+**Task 3 REST API:** `https://task-manager-api-dplt.onrender.com/api`
 
 ---
 
-## 🛠️ Tech Stack
+## 🌟 Project Overview
 
-- **HTML5:** Semantic markup (`<aside>`, `<main>`, `<header>`, `<article>`, `<nav>`, ARIA roles & attributes).
-- **CSS3:** Custom Properties (CSS Variables) for theming, Flexbox & Grid layouts, Backdrop Blur, transitions, animations, and media queries.
-- **JavaScript (ES6+):** Pure Vanilla JS with modular architecture, DOM event delegation, local state management, and `localStorage` API.
-- **Fonts & Assets:** Google Fonts (*Plus Jakarta Sans*), lightweight inline SVGs.
+**TaskFlow Dashboard v2.0** is an enterprise-grade, modern Single-Page Application (SPA) built with **React 18**, **Vite 6**, and **React Router v6**, integrated seamlessly with the **Task 3 REST API** deployed on Render.
+
+The application delivers a responsive, accessible task management experience featuring full asynchronous CRUD workflows, client-side routing, centralized React Context state management, API resiliency with offline fallback caching, form validation, theme customization (Light/Dark mode), and live velocity analytics.
 
 ---
 
-## 📁 Project Structure
+## 🏗️ Architecture & Technical Design
 
 ```text
 taskflow-dashboard/
-├── index.html       # Semantic HTML5 layout and modal dialogs
-├── style.css        # CSS3 variables, layout, animations & dark theme
-├── script.js        # Vanilla JS state, CRUD, filters, statistics & storage
-├── .gitignore       # Git ignore rules for clean repository
-└── README.md        # Project documentation and architecture guide
+├── index.html                    # Root HTML5 template
+├── vite.config.js                # Vite bundler configuration
+├── package.json                  # Dependencies and scripts (React 18, React Router v6)
+├── src/
+│   ├── main.jsx                  # Application entry point
+│   ├── App.jsx                   # Root layout, routing configuration, provider tree
+│   ├── api/
+│   │   ├── apiClient.js          # Fetch wrapper, error parsing, configurable base URL
+│   │   └── taskService.js        # Service layer (GET, POST, PUT, DELETE, checkHealth)
+│   ├── context/
+│   │   ├── TaskContext.jsx       # Global tasks state, active filters, search, CRUD hooks
+│   │   ├── ThemeContext.jsx      # Light/Dark mode state management & localStorage persistence
+│   │   └── ToastContext.jsx      # Non-blocking notification dispatch queue
+│   ├── components/
+│   │   ├── common/
+│   │   │   ├── ApiStatusBadge.jsx   # Live backend connectivity & latency badge
+│   │   │   ├── DeleteModal.jsx      # Two-step destructive action confirmation
+│   │   │   ├── EmptyState.jsx       # Contextual empty state illustrations
+│   │   │   ├── ErrorBoundary.jsx    # React Error Boundary for runtime resilience
+│   │   │   ├── LoadingSkeleton.jsx  # Pulse skeleton loaders during API fetch
+│   │   │   ├── TaskModal.jsx        # Create & Edit task dialog with form validation
+│   │   │   └── ToastContainer.jsx   # Global floating toast notifications
+│   │   ├── layout/
+│   │   │   ├── AppLayout.jsx        # Base layout shell (Sidebar + Header + Outlet)
+│   │   │   ├── Header.jsx           # Global search with shortcut, theme switch, API badge
+│   │   │   └── Sidebar.jsx          # Collapsible navigation, category links, sprint goal
+│   │   └── tasks/
+│   │       ├── TaskCard.jsx         # Individual task card with status, category & actions
+│   │       ├── TaskStats.jsx        # 4 KPI metric cards (Total, In Progress, Completed, High)
+│   │       └── TaskToolbar.jsx      # Status tabs, category/priority filters, sort & view toggle
+│   ├── pages/
+│   │   ├── DashboardPage.jsx     # Overview, KPI statistics, active priorities & sprint progress
+│   │   ├── TasksPage.jsx         # Comprehensive task management, list/grid view, live search
+│   │   ├── AnalyticsPage.jsx     # Velocity metrics, category bars, priority distribution
+│   │   ├── SettingsPage.jsx      # API endpoint configuration, live health test, cache reset
+│   │   └── NotFoundPage.jsx      # Accessible 404 error page
+│   └── styles/
+│       ├── index.css             # CSS design tokens, CSS variables, typography, theme styles
+│       └── components.css        # Layout, cards, modals, toolbar, skeletons, animations
 ```
 
 ---
 
-## ⚡ How to Run Locally
+## 🚦 Client-Side Routing (React Router v6)
 
-Since this project has **zero build dependencies**, you can run it directly in any modern web browser.
+| Route | Page | Description |
+| :--- | :--- | :--- |
+| `/` | `DashboardPage` | Executive overview, 4 KPI cards, active priority deliverables, sprint progress |
+| `/tasks` | `TasksPage` | Full task management grid/list, real-time search, category/priority filtering |
+| `/analytics` | `AnalyticsPage` | Visual distribution by category, priority breakdown, completion velocity |
+| `/settings` | `SettingsPage` | API Base URL configuration, live health check probe, theme switch, cache purge |
+| `*` | `NotFoundPage` | 404 fallback page with navigation redirect |
 
-### Option 1: Direct File Open
-1. Clone or download this repository.
-2. Double-click `index.html` (or right-click and choose **Open with Google Chrome / Firefox / Safari / Edge**).
+---
 
-### Option 2: Local Development Server (Optional)
-If you have Python installed:
+## 🔌 Task 3 REST API Integration
+
+The application integrates with the Task 3 REST API:
+- **Default Production Base URL:** `https://task-manager-api-dplt.onrender.com/api`
+- **Configurable Base URL:** Users can test custom local/staging endpoints via the Settings page (`/settings`).
+
+### REST API Endpoints
+
+| HTTP Method | Endpoint | Description | Request Body / Query |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/tasks` | Retrieve all tasks | — |
+| `GET` | `/tasks/:id` | Retrieve single task by ID | — |
+| `POST` | `/tasks` | Create a new task | `{ title, description, status, priority, category, due_date }` |
+| `PUT` | `/tasks/:id` | Update existing task | `{ title, description, status, priority, category, due_date }` |
+| `DELETE` | `/tasks/:id` | Permanently delete a task | — |
+
+### Service Layer Architecture (`src/api/`)
+1. **`apiClient.js`:** Centralized `request()` helper with automatic JSON header injection, a 15-second request timeout controller, network error trapping, and uniform error serialization.
+2. **`taskService.js`:** Clean abstraction layer providing CRUD methods (`getTasks`, `getTaskById`, `createTask`, `updateTask`, `deleteTask`, `checkHealth`), ensuring components remain decoupled from HTTP implementation details.
+3. **Data Normalization:** Translates backend snake_case properties (`due_date`, `created_at`) into UI-friendly camelCase, with fallback handling for unassigned dates or categories.
+
+---
+
+## ⚡ State Management & Resilience
+
+- **React Context API:**
+  - `TaskContext`: Holds master task records, filtered task computation, active filter states (`status`, `category`, `priority`, `sort`), global search query, API status (`online`, `connecting`, `offline`), and async CRUD actions.
+  - `ThemeContext`: Toggles Light and Dark themes, with system color scheme detection and `localStorage` persistence.
+  - `ToastContext`: Dispatches non-blocking alerts (`success`, `danger`, `warning`, `info`) with auto-dismissal.
+- **Offline Resilient Caching:** Caches API payloads in `localStorage` so the application renders cached data immediately on cold starts while synchronizing with the cloud backend in the background.
+- **Render Cold-Start Handling:** Visual indicators (`ApiStatusBadge`) notify users when the cloud server is waking from sleep, with automatic retry mechanisms.
+- **React Error Boundary:** Class-based error boundary (`ErrorBoundary.jsx`) wraps the application tree to catch unexpected rendering exceptions and present a clean recovery UI.
+
+---
+
+## 🎨 UI & UX Highlights
+
+- **Design Tokens & Dark Mode:** Built with clean CSS Custom Properties, featuring smooth transitions and high-contrast color palettes.
+- **View Toggle:** Switch effortlessly between **List View** and **Grid View**.
+- **Keyboard Navigation:** Press `/` anywhere in the dashboard to immediately focus the global search bar; press `Esc` to close open modals or blur search.
+- **Loading & Skeleton States:** Pulse loading skeletons ensure zero layout shifts during async API round trips.
+- **Mobile Responsive:** Full support for mobile drawers, responsive grids, and touch targets across screen sizes (<640px, 768px, 1024px, 1280px+).
+
+---
+
+## 💻 How to Run Locally
+
+### Prerequisites
+- Node.js (v18.0 or higher recommended)
+- npm (v9.0 or higher)
+
+### Installation & Development
 ```bash
-python3 -m http.server 8080
-```
-Then visit `http://localhost:8080` in your browser.
+# 1. Clone repository
+git clone https://github.com/anshjaiswal2911-tech/taskflow-dashboard.git
+cd taskflow-dashboard
 
-Using Node.js (`npx`):
+# 2. Install dependencies
+npm install
+
+# 3. Start Vite development server
+npm run dev
+```
+
+Visit `http://localhost:5173` in your browser.
+
+### Production Build & Preview
 ```bash
-npx serve .
+# Build optimized production bundle
+npm run build
+
+# Preview production build locally
+npm run preview
 ```
 
 ---
 
-## 🧠 Core Frontend Concepts Demonstrated
+## 🧪 Submission Verification
 
-1. **State-Driven UI Architecture:** Single source of truth in JavaScript (`state` object) that declaratively synchronizes the DOM, badges, and KPI cards on every state mutation.
-2. **Accessible Modals & Overlays:** Proper ARIA attributes (`aria-hidden`, `aria-modal`, `role="dialog"`), body scroll locking, and backdrop click handling.
-3. **CSS Custom Properties (Variables):** Scalable design system with centralized color tokens, dynamic theme switching, and smooth transitions.
-4. **Responsive Layout Architecture:** Mobile-first and desktop breakpoints using CSS Grid and Flexbox, with an off-canvas drawer navigation for mobile and tablet screens.
-5. **Form Validation & Error Handling:** Inline form feedback and constraint validation before updating state.
-6. **Toast Notification Pattern:** Reusable, auto-dismissing floating alert banner system with customizable types (`success`, `danger`, `info`).
-7. **Cross-Session Persistence:** Serialization and deserialization of application state with `localStorage`.
-
----
-
-## 🔮 Future Improvements
-
-- [ ] **Drag & Drop Reordering:** HTML5 Drag and Drop API or Kanban Board view.
-- [ ] **Data Export & Import:** Export task lists to JSON or CSV and restore backups.
-- [ ] **Browser Notifications:** Web Notification API reminders for overdue tasks.
-- [ ] **Subtasks / Checklists:** Nested subtasks inside each main task item.
-- [ ] **Tags & Labels Customizer:** Allow users to create custom categories with tailored colors.
+- ✅ React 18 + Vite 6 Single Page Application
+- ✅ Client-Side Routing with React Router v6 (`/`, `/tasks`, `/analytics`, `/settings`, `*`)
+- ✅ Task 3 REST API Integration (`GET`, `POST`, `PUT`, `DELETE` on `/tasks`)
+- ✅ Centralized API Service Layer (`src/api/taskService.js`)
+- ✅ React Context State Management (`TaskContext`, `ThemeContext`, `ToastContext`)
+- ✅ Form Handling & Validation on Task Creation/Editing
+- ✅ React Error Boundary (`ErrorBoundary.jsx`)
+- ✅ Responsive Design across Desktop, Tablet, and Mobile
+- ✅ Clean Production Build (`dist/` generated with 0 errors)
 
 ---
 
 ## 📄 License
-This project was built for educational and internship portfolio demonstration purposes. Open source under the [MIT License](LICENSE).
+Open source under the [MIT License](LICENSE). Built for the YR NOVATECH Internship Program.
